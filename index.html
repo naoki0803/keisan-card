@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>けいさんカード</title>
+  <meta name="description" content="こえでこたえる、しょうがく1ねんせいのけいさんカード">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=M+PLUS+Rounded+1c:wght@800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <main>
+    <!-- ホーム -->
+    <section id="screen-home" class="screen active">
+      <h1 class="title" aria-label="けいさんカード">
+        <span>け</span><span>い</span><span>さ</span><span>ん</span><span>カ</span><span>ー</span><span>ド</span>
+      </h1>
+      <p class="tagline">🎤 こえで こたえてね!</p>
+
+      <div class="mode-buttons">
+        <button class="sticker mode-btn mode-add" data-mode="add10">
+          <span class="mode-icon">+</span>
+          <span class="mode-label">たしざん</span>
+          <span class="mode-best" data-best="add10">さいそく --:--</span>
+        </button>
+        <button class="sticker mode-btn mode-sub" data-mode="sub10">
+          <span class="mode-icon">−</span>
+          <span class="mode-label">ひきざん</span>
+          <span class="mode-best" data-best="sub10">さいそく --:--</span>
+        </button>
+      </div>
+
+      <button class="sticker link-btn" id="btn-records">📖 きろくをみる</button>
+    </section>
+
+    <!-- プレイ -->
+    <section id="screen-play" class="screen">
+      <header class="play-header">
+        <button class="sticker quit-btn" id="btn-quit">やめる</button>
+        <div class="progress" id="play-progress">1 / 65</div>
+        <div class="timer num" id="play-timer">0:00.0</div>
+      </header>
+
+      <div class="card-area">
+        <div class="sticker card" id="card">
+          <span class="card-text num" id="card-text">3 + 4</span>
+          <span class="card-eq num">=</span>
+          <span class="card-answer num">?</span>
+        </div>
+        <div class="judge" id="judge" aria-live="polite"></div>
+      </div>
+
+      <div class="mic-row">
+        <span class="mic-status" id="mic-status">🎤 じゅんびちゅう…</span>
+        <span class="heard num" id="heard"></span>
+      </div>
+
+      <div class="numpad" id="numpad" aria-label="すうじボタン"></div>
+    </section>
+
+    <!-- 結果 -->
+    <section id="screen-result" class="screen">
+      <h2 class="result-title" id="result-title">🎉 できた!</h2>
+      <div class="sticker result-card">
+        <div class="result-time num" id="result-time">1:23.4</div>
+        <div class="newbest" id="result-newbest" hidden>👑 ベストきろく!</div>
+        <dl class="result-detail">
+          <div><dt>まちがい</dt><dd id="result-mistakes" class="num">0</dd></div>
+          <div><dt>さいそく</dt><dd id="result-best" class="num">--:--</dd></div>
+        </dl>
+      </div>
+      <div class="result-buttons">
+        <button class="sticker big-btn" id="btn-retry">もういちど!</button>
+        <button class="sticker link-btn" id="btn-home">ホームへ</button>
+      </div>
+    </section>
+
+    <!-- きろく -->
+    <section id="screen-records" class="screen">
+      <h2 class="records-title">📖 きろく</h2>
+      <div id="records-list"></div>
+      <button class="sticker link-btn" id="btn-records-back">もどる</button>
+    </section>
+  </main>
+</body>
+</html>
