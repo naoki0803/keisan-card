@@ -72,6 +72,38 @@ export function parseSpokenNumber(transcript) {
   return value;
 }
 
+// 未消費状態の初期値
+export const FRESH_CONSUMED = Object.freeze({ index: -1, len: 0 });
+
+// 認識イベントを回答として判定する純粋関数。
+// continuous モードでは発話が途切れない限り同じ result にテキストが追記され続ける
+// (「4」で正解 → 続けて「はち」と言うと同じ result が「48」に成長する)ため、
+// 回答を消費した時点の transcript 長を consumed に記録し、
+// 同じ result では未消費のサフィックスだけを判定対象にする。
+//
+// - event: { text, isFinal, index }
+// - consumed: { index, len } 前回消費した result 番号と消費済み文字数
+// - answer: 現在のカードの答え
+// 返り値: { verdict: 'correct' | 'wrong' | null, value, consumed }
+//   verdict が null のときは何もしない(consumed も変化しない)。
+export function judgeSpeechEvent(event, consumed, answer) {
+  const target =
+    event.index === consumed.index ? event.text.slice(consumed.len) : event.text;
+  const value = parseSpokenNumber(target);
+  if (value === null) return { verdict: null, value: null, heard: target, consumed };
+
+  const consumedNow = { index: event.index, len: event.text.length };
+  if (value === answer) {
+    // 正解は interim でも即時判定する(体感ゼロラグの要)
+    return { verdict: 'correct', value, heard: target, consumed: consumedNow };
+  }
+  if (event.isFinal) {
+    // 不正解は言い終わる前の誤認識かもしれないので final でのみ判定する
+    return { verdict: 'wrong', value, heard: target, consumed: consumedNow };
+  }
+  return { verdict: null, value, heard: target, consumed };
+}
+
 // 音声認識ラッパ。認識結果は onNumber({ value, text, isFinal, index }) に流す。
 // - interim(isFinal=false): 正解の即時判定に使う(体感ゼロラグの要)
 // - final(isFinal=true): 不正解の確定判定に使う
@@ -99,9 +131,7 @@ export function createRecognizer({ onNumber, onStatus }) {
   rec.onresult = (e) => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const result = e.results[i];
-      const text = result[0].transcript;
-      const value = parseSpokenNumber(text);
-      onNumber({ value, text, isFinal: result.isFinal, index: i });
+      onNumber({ text: result[0].transcript, isFinal: result.isFinal, index: i });
     }
   };
 

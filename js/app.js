@@ -1,5 +1,5 @@
 import { MODES, shuffle } from './modes.js';
-import { createRecognizer } from './speech.js';
+import { createRecognizer, judgeSpeechEvent, FRESH_CONSUMED } from './speech.js';
 import { saveResult, getBest, getHistory } from './records.js';
 import { burst, celebrate } from './fx.js';
 
@@ -14,8 +14,8 @@ const state = {
   startTime: 0,
   accepting: false, // 回答受付中か(カウントダウン中・結果画面では false)
   timerId: null,
-  // 音声: interim で正解済みの発話の残り(final 等)を無視するための記録
-  consumed: { index: -1, value: null },
+  // 音声: 同一発話内で消費済みのテキスト範囲(speech.js の judgeSpeechEvent 参照)
+  consumed: FRESH_CONSUMED,
 };
 
 let recognizer = null;
@@ -113,7 +113,7 @@ function startGame(modeId) {
   state.index = 0;
   state.mistakes = 0;
   state.accepting = false;
-  state.consumed = { index: -1, value: null };
+  state.consumed = FRESH_CONSUMED;
 
   showScreen('play');
   renderCard();
@@ -189,24 +189,13 @@ function showHeard(text) {
   heardClearId = setTimeout(() => (el.textContent = ''), 1500);
 }
 
-function handleNumber({ value, text, isFinal, index }) {
-  showHeard(text);
+function handleNumber(event) {
   if (!state.accepting) return;
-  // interim で正解済みの発話の残り(同じ index・同じ値)は無視する
-  if (index === state.consumed.index && value === state.consumed.value) return;
-  if (value === null) return;
-
-  if (!isFinal) {
-    // 暫定結果では「正解」だけを即時判定する(体感ゼロラグ)。
-    // 不正解は言い終わる前の誤認識かもしれないので final を待つ。
-    if (value === currentAnswer()) {
-      state.consumed = { index, value };
-      submitAnswer(value);
-    }
-  } else {
-    state.consumed = { index, value };
-    submitAnswer(value);
-  }
+  const result = judgeSpeechEvent(event, state.consumed, currentAnswer());
+  state.consumed = result.consumed;
+  // 子どもへのフィードバックは「いま判定対象になった部分」を見せる
+  showHeard(result.value !== null ? String(result.value) : result.heard);
+  if (result.verdict !== null) submitAnswer(result.value);
 }
 
 function startRecognizer() {
@@ -216,7 +205,7 @@ function startRecognizer() {
       onStatus: (status) => {
         if (status === 'listening') {
           // 認識セッションが再起動すると発話 index が 0 に戻る
-          state.consumed = { index: -1, value: null };
+          state.consumed = FRESH_CONSUMED;
         }
         setMicStatus(status);
       },
